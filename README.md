@@ -1,292 +1,136 @@
-# 💰 Roda Moedas - Financial Input Tool
+# 💰 Roda Moedas
 
-A Streamlit web application for tracking monthly coin and bill data with automatic calculations and Google Sheets storage.
+Streamlit app for recording monthly coin and bill counts, calculating how much goes to **troca-notas** and **banco**, and saving the same v1-compatible columns to Google Sheets.
 
-## 🚀 Features
+## V2 changes
 
-- **User-friendly form** with dropdown user selection
-- **Coin inputs**: 2 EUR, 1 EUR, 0.5 EUR, 0.2 EUR
-- **Bill inputs**: 20 EUR, 10 EUR, 5 EUR
-- **Automatic calculations** (quantity × denomination)
-- **Two summary tables**:
-  - **Para troca-notas**: 1 EUR + 0.5 EUR totals
-  - **Para banco**: 20, 10, 5, 2, 0.2 EUR totals (with optional 0.1 and 0.05 EUR)
-- **Google Sheets integration** for persistent storage
-- **Recent entries view** showing last 5 submissions
+- `Reis` is now the second option in the user dropdown.
+- `0,10 €` and `0,05 €` coins are part of the initial coin form.
+- `0,10 €` and `0,05 €` always count toward **banco**.
+- The user can choose how much of the available `1 €` coin value goes to **troca-notas**.
+- The user can choose how much of the available `0,50 €` coin value goes to **troca-notas**.
+- Any `1 €` / `0,50 €` amount not assigned to **troca-notas** automatically counts toward **banco**.
+- The Google Sheets output columns are preserved from v1.
 
-## 📋 Prerequisites
+## Google Sheets columns
 
-- Python 3.8 or higher
-- Google Cloud account (free tier is sufficient)
-- Google Sheets spreadsheet
-
-## 🔧 Installation
-
-### 1. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Or manually:
-
-```bash
-pip install streamlit streamlit-gsheets-connection pandas
-```
-
-### 2. Set Up Google Sheets API
-
-#### Step 1: Create a Google Cloud Project
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Click "Select a project" → "New Project"
-3. Name your project (e.g., "Roda Moedas") and click "Create"
-
-#### Step 2: Enable Google Sheets API
-
-1. In your project, go to "APIs & Services" → "Library"
-2. Search for "Google Sheets API"
-3. Click on it and press "Enable"
-
-#### Step 3: Create Service Account Credentials
-
-1. Go to "APIs & Services" → "Credentials"
-2. Click "Create Credentials" → "Service Account"
-3. Fill in the service account details:
-   - Name: `roda-moedas-service`
-   - ID: (auto-generated)
-   - Click "Create and Continue"
-4. Skip "Grant this service account access to project" (optional)
-5. Click "Done"
-
-#### Step 4: Generate JSON Key
-
-1. Find your newly created service account in the list
-2. Click on it to open details
-3. Go to the "Keys" tab
-4. Click "Add Key" → "Create new key"
-5. Choose "JSON" format
-6. Click "Create" - a JSON file will be downloaded
-
-#### Step 5: Create and Share Google Sheet
-
-1. Create a new Google Sheet (or use an existing one)
-2. Copy the Google Sheet URL
-3. Click "Share" button
-4. Paste the **service account email** (from the JSON file, look for `client_email`)
-5. Set permission to **Editor**
-6. Click "Send"
-
-### 3. Configure Secrets
-
-1. Copy the template:
-
-   ```bash
-   # The .streamlit folder should already exist
-   # Edit the secrets.toml file
-   ```
-
-2. Open `.streamlit/secrets.toml` and replace the placeholders with values from your downloaded JSON file:
-
-   ```toml
-   [connections.gsheets]
-   spreadsheet = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
-   type = "service_account"
-   project_id = "your-project-id"
-   private_key_id = "your-private-key-id"
-   private_key = "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
-   client_email = "your-service-account@your-project.iam.gserviceaccount.com"
-   client_id = "your-client-id"
-   auth_uri = "https://accounts.google.com/o/oauth2/auth"
-   token_uri = "https://oauth2.googleapis.com/token"
-   auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-   client_x509_cert_url = "your-cert-url"
-   ```
-
-   **Important Notes:**
-   - Keep the `\n` characters in the private key
-   - The spreadsheet URL is your Google Sheet's full URL
-   - All values come directly from the downloaded JSON file
-
-## 🌐 Deployment to Streamlit Community Cloud
-
-**RECOMMENDED**: Deploy your app to Streamlit Community Cloud so your 5-10 friends can access it from anywhere via a public URL.
-
-### Why Streamlit Community Cloud?
-
-- ✅ **Free hosting** for public apps
-- ✅ **Easy deployment** directly from GitHub
-- ✅ **Automatic updates** when you push code changes
-- ✅ **24/7 availability** - no need to keep your computer running
-- ✅ **Public URL** like `https://roda-moedas.streamlit.app`
-
-### Deployment Steps
-
-#### Step 1: Create a GitHub Repository
-
-1. Go to [GitHub](https://github.com) and sign in (or create an account)
-2. Click the "+" icon → "New repository"
-3. Name it: `roda-moedas`
-4. Choose **Private** (recommended) or Public
-5. Click "Create repository"
-
-#### Step 2: Push Your Code to GitHub
-
-Open a terminal in your project directory and run:
-
-```bash
-# Initialize git repository
-git init
-
-# Add all files (secrets.toml is already in .gitignore so it won't be uploaded)
-git add .
-
-# Commit your files
-git commit -m "Initial commit - Roda Moedas app"
-
-# Add your GitHub repository as remote (replace YOUR_USERNAME)
-git remote add origin https://github.com/YOUR_USERNAME/roda-moedas.git
-
-# Push to GitHub
-git branch -M main
-git push -u origin main
-```
-
-> [!IMPORTANT]
-> The `.gitignore` file ensures your `secrets.toml` and credentials are NOT uploaded to GitHub.
-
-#### Step 3: Deploy to Streamlit Community Cloud
-
-1. Go to [share.streamlit.io](https://share.streamlit.io)
-2. Click "Sign in with GitHub" and authorize Streamlit
-3. Click "New app"
-4. Fill in the deployment settings:
-   - **Repository**: Select `your-username/roda-moedas`
-   - **Branch**: `main`
-   - **Main file path**: `app.py`
-   - **App URL**: Choose a custom URL like `roda-moedas` (final URL will be `https://roda-moedas.streamlit.app`)
-5. Click "Advanced settings"
-
-#### Step 4: Add Secrets to Streamlit Cloud
-
-1. In the "Advanced settings" section, find the "Secrets" text area
-2. Copy the entire contents from your local `.streamlit/secrets.toml` file
-3. Paste it into the Secrets text area in Streamlit Cloud
-4. Click "Deploy!"
-
-#### Step 5: Wait for Deployment
-
-- Streamlit will build and deploy your app (takes 2-5 minutes)
-- Once complete, you'll see your app running
-- **Share the URL** with your friends! 🎉
-
-### Managing Your Deployed App
-
-**View logs**: Click the "Manage app" button to see logs and errors
-
-**Update secrets**: Go to app settings → Secrets → Edit
-
-**Redeploy**: Any time you push changes to GitHub, the app automatically redeploys
-
-**Restart app**: If needed, click "☰" menu → "Reboot app"
-
-### Accessing the App
-
-Once deployed, your friends can access the app at:
+The app writes the same columns as the original version:
 
 ```text
-https://YOUR-APP-NAME.streamlit.app
+Timestamp
+User
+Date
+Moeda_2EUR_Qty
+Moeda_2EUR_Total
+Moeda_1EUR_Qty
+Moeda_1EUR_Total
+Moeda_05EUR_Qty
+Moeda_05EUR_Total
+Moeda_02EUR_Qty
+Moeda_02EUR_Total
+Moeda_01EUR_Qty
+Moeda_01EUR_Total
+Moeda_005EUR_Qty
+Moeda_005EUR_Total
+Nota_20EUR_Qty
+Nota_20EUR_Total
+Nota_10EUR_Qty
+Nota_10EUR_Total
+Nota_5EUR_Qty
+Nota_5EUR_Total
+Troca_Total
+Banco_Total
+Grand_Total
+Notes
 ```
 
-They just need to:
+## Safe testing without live data
 
-1. Open the URL in their browser
-2. Fill in the form
-3. Submit their data
-4. Data is saved to your Google Sheet!
+### Option A — local dry-run test
 
----
-
-## 🎯 Local Usage (Optional)
-
-If you want to run the app locally for testing:
-
-### Run the Application
+If Google Sheets secrets are absent, the app automatically uses session-only dry-run storage.
+Nothing is written to Google Sheets.
 
 ```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-The application will open in your default web browser at `http://localhost:8501`
+### Option B — Streamlit Cloud test app with no writes
 
-### Using the Form
+Create a second Streamlit Cloud app from the `v2-rewrite` branch and add this to the app secrets:
 
-1. Select the **User** from the dropdown
-2. Enter quantities for each **coin** category (Moedas)
-3. Enter quantities for each **bill** category (Notas)
-4. Select the **Date** (defaults to today)
-5. Add any optional **Notes**
-6. Click **Submit Entry**
-7. View calculated totals in two tables:
-   - **Para troca-notas**: Exchange coins summary
-   - **Para banco**: Bank deposit summary (with optional 0.1 and 0.05 EUR fields)
-8. Data is automatically saved to Google Sheets
-9. View the last 5 entries at the bottom of the page
+```toml
+[app]
+dry_run = true
+```
 
-### Validation
+You can also paste the production `[connections.gsheets]` secrets into the test app; `dry_run = true` prevents writes and uses session-only test data.
 
-- The form will not submit if the total amount is 0
-- All numeric inputs only accept whole numbers (no decimals)
-- Date defaults to today but can be changed
+### Option C — Streamlit Cloud test app with a test Google Sheet
 
-## 📊 Data Structure
+Recommended before production use:
 
-Each submission saves the following to Google Sheets:
+1. Create a separate Google Sheet for testing.
+2. Share it with the same Google service account email as **Editor**.
+3. Create a second Streamlit Cloud app from the `v2-rewrite` branch.
+4. Copy the same secrets as production, but change only:
 
-- Timestamp
-- User name
-- Date
-- Quantities and totals for each coin/bill category
-- Troca total (exchange coins)
-- Banco total (bank deposit)
-- Grand total
-- Notes
+```toml
+[connections.gsheets]
+spreadsheet = "https://docs.google.com/spreadsheets/d/YOUR_TEST_SHEET_ID/edit"
+```
 
-## 🔒 Security Notes
+Do **not** set `dry_run = true` if you want to test real writes to the test sheet.
 
-- **Never commit** `.streamlit/secrets.toml` to version control
-- Keep your service account JSON file secure
-- Add `.streamlit/secrets.toml` to `.gitignore`
+## Production secrets
 
-## 🛠️ Troubleshooting
+For live Google Sheets writes, Streamlit secrets must include:
 
-### "Failed to connect to Google Sheets"
+```toml
+[connections.gsheets]
+spreadsheet = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
+type = "service_account"
+project_id = "your-project-id"
+private_key_id = "your-private-key-id"
+private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+client_email = "your-service-account@your-project.iam.gserviceaccount.com"
+client_id = "your-client-id"
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
+auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+client_x509_cert_url = "your-cert-url"
+```
 
-- Verify your `secrets.toml` is correctly configured
-- Ensure the Google Sheets API is enabled in your project
-- Check that you shared the sheet with the service account email
+Never commit `.streamlit/secrets.toml` or service-account JSON files.
 
-### "Permission denied" errors
+## Run tests
 
-- Make sure the service account email has **Editor** permissions on your Google Sheet
-- Verify the spreadsheet URL in `secrets.toml` is correct
+```bash
+. .venv/bin/activate
+pip install pytest
+PYTHONPATH=src pytest -q
+```
 
-### Data not appearing
+## Run locally
 
-- Check that your Google Sheet has a worksheet named "Sheet1"
-- Verify the sheet is not protected or locked
+```bash
+. .venv/bin/activate
+streamlit run app.py
+```
 
-## 📝 License
+## Deployment recommendation
 
-This project is open source and available for personal use.
+Keep the current production app on `main` until v2 is approved.
+Deploy a separate Streamlit Cloud test app from a separate branch, for example:
 
-## 👥 Users
+```text
+Repository: CryptoReis/roda-moedas
+Branch: v2-rewrite
+Main file: app.py
+Suggested URL: roda-moedas-v2.streamlit.app
+```
 
-- Vanda
-- Renato
-- André
-- Daniela
-- Silvia
-- Parada
-- Mafalda
-- Reis
+After testing and approval, merge v2 into `main` or repoint the production Streamlit app to the approved branch.
