@@ -114,7 +114,6 @@ with bill_col3:
     nota_5eur = denomination_input("5 €", Decimal("5.00"), "nota_5eur")
 
 notes = st.text_area("Notas", placeholder="Notas opcionais sobre este registo...")
-submitted = st.button("✅ Submeter registo", width="stretch", type="primary")
 
 entry = EntryInput(
     user=selected_user,
@@ -167,6 +166,55 @@ with st.expander("Detalhe dos cálculos", expanded=True):
         ]
     )
     st.dataframe(detail_df, width="stretch", hide_index=True)
+
+st.markdown("---")
+st.markdown("### ✅ Rever antes de submeter")
+st.caption("Confirma estes valores antes de gravar o registo.")
+
+review_col1, review_col2 = st.columns(2)
+with review_col1:
+    st.markdown("**Informação geral**")
+    st.write(f"- Utilizador: **{selected_user}**")
+    st.write(f"- Data: **{entry_date}**")
+    if notes.strip():
+        st.write(f"- Notas: {notes}")
+    else:
+        st.write("- Notas: —")
+
+with review_col2:
+    st.markdown("**Totais a gravar**")
+    st.write(f"- Total geral: **{eur(totals['Grand_Total'])}**")
+    st.write(f"- Para troca-notas: **{eur(totals['Troca_Total'])}**")
+    st.write(f"- Para banco: **{eur(totals['Banco_Total'])}**")
+
+review_df = pd.DataFrame(
+    [
+        {"Tipo": "Moeda", "Denominação": "2 €", "Quantidade": moeda_2eur, "Total": eur(totals["Moeda_2EUR_Total"]), "Destino": "Banco"},
+        {
+            "Tipo": "Moeda",
+            "Denominação": "1 €",
+            "Quantidade": moeda_1eur,
+            "Total": eur(totals["Moeda_1EUR_Total"]),
+            "Destino": f"{eur(money(troca_1eur_amount))} troca-notas / {eur(totals['Moeda_1EUR_Total'] - money(troca_1eur_amount))} banco",
+        },
+        {
+            "Tipo": "Moeda",
+            "Denominação": "0,50 €",
+            "Quantidade": moeda_05eur,
+            "Total": eur(totals["Moeda_05EUR_Total"]),
+            "Destino": f"{eur(money(troca_05eur_amount))} troca-notas / {eur(totals['Moeda_05EUR_Total'] - money(troca_05eur_amount))} banco",
+        },
+        {"Tipo": "Moeda", "Denominação": "0,20 €", "Quantidade": moeda_02eur, "Total": eur(totals["Moeda_02EUR_Total"]), "Destino": "Banco"},
+        {"Tipo": "Moeda", "Denominação": "0,10 €", "Quantidade": moeda_01eur, "Total": eur(totals["Moeda_01EUR_Total"]), "Destino": "Banco"},
+        {"Tipo": "Moeda", "Denominação": "0,05 €", "Quantidade": moeda_005eur, "Total": eur(totals["Moeda_005EUR_Total"]), "Destino": "Banco"},
+        {"Tipo": "Nota", "Denominação": "20 €", "Quantidade": nota_20eur, "Total": eur(totals["Nota_20EUR_Total"]), "Destino": "Banco"},
+        {"Tipo": "Nota", "Denominação": "10 €", "Quantidade": nota_10eur, "Total": eur(totals["Nota_10EUR_Total"]), "Destino": "Banco"},
+        {"Tipo": "Nota", "Denominação": "5 €", "Quantidade": nota_5eur, "Total": eur(totals["Nota_5EUR_Total"]), "Destino": "Banco"},
+    ]
+)
+st.dataframe(review_df, width="stretch", hide_index=True)
+
+submitted = st.button("✅ Confirmar e submeter registo", width="stretch", type="primary")
 
 if submitted:
     if totals["Grand_Total"] == Decimal("0.00"):
