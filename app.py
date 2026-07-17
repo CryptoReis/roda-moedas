@@ -48,10 +48,47 @@ def denomination_input(label: str, denomination: Decimal, key: str) -> int:
     return int(quantity)
 
 
+def reset_form() -> None:
+    """Safely clear all form widgets after an explicit confirmation."""
+    for key in [
+        "moeda_2eur",
+        "moeda_1eur",
+        "moeda_05eur",
+        "moeda_02eur",
+        "moeda_01eur",
+        "moeda_005eur",
+        "nota_20eur",
+        "nota_10eur",
+        "nota_5eur",
+    ]:
+        st.session_state[key] = 0
+    st.session_state["troca_1eur_amount"] = 0.0
+    st.session_state["troca_05eur_amount"] = 0.0
+    st.session_state["_previous_1eur_available"] = 0.0
+    st.session_state["_previous_05eur_available"] = 0.0
+    st.session_state["selected_user"] = USERS[0]
+    st.session_state["entry_date"] = datetime.now().date()
+    st.session_state["notes"] = ""
+    st.session_state["reset_confirm"] = False
+
+
+def sync_troca_default(key: str, previous_key: str, available: Decimal) -> None:
+    """Default troca-notas allocation to full availability, while preserving manual edits."""
+    available_float = float(available)
+    previous_available = float(st.session_state.get(previous_key, 0.0))
+    current_value = st.session_state.get(key)
+
+    if current_value is None or float(current_value) == previous_available:
+        st.session_state[key] = available_float
+    else:
+        st.session_state[key] = min(float(current_value), available_float)
+    st.session_state[previous_key] = available_float
+
+
 st.subheader("📋 Dados do registo")
 
-selected_user = st.selectbox("Utilizador", USERS, index=0)
-entry_date = st.date_input("Data", value=datetime.now().date())
+selected_user = st.selectbox("Utilizador", USERS, index=0, key="selected_user")
+entry_date = st.date_input("Data", value=datetime.now().date(), key="entry_date")
 
 st.markdown("### 🪙 Moedas")
 coin_col1, coin_col2, coin_col3 = st.columns(3)
@@ -68,14 +105,8 @@ with coin_col3:
 total_1eur_available = Decimal(moeda_1eur) * Decimal("1.00")
 total_05eur_available = Decimal(moeda_05eur) * Decimal("0.50")
 
-# If a user lowers the coin quantity after choosing a troca-notas amount, clamp the
-# current selection so Streamlit never keeps an impossible value in session state.
-st.session_state["troca_1eur_amount"] = min(
-    float(st.session_state.get("troca_1eur_amount", 0.0)), float(total_1eur_available)
-)
-st.session_state["troca_05eur_amount"] = min(
-    float(st.session_state.get("troca_05eur_amount", 0.0)), float(total_05eur_available)
-)
+sync_troca_default("troca_1eur_amount", "_previous_1eur_available", total_1eur_available)
+sync_troca_default("troca_05eur_amount", "_previous_05eur_available", total_05eur_available)
 
 st.markdown("### 🔄 Troca-notas")
 st.caption(
@@ -113,7 +144,7 @@ with bill_col2:
 with bill_col3:
     nota_5eur = denomination_input("5 €", Decimal("5.00"), "nota_5eur")
 
-notes = st.text_area("Notas", placeholder="Notas opcionais sobre este registo...")
+notes = st.text_area("Notas", placeholder="Notas opcionais sobre este registo...", key="notes")
 
 entry = EntryInput(
     user=selected_user,
@@ -213,6 +244,16 @@ review_df = pd.DataFrame(
     ]
 )
 st.dataframe(review_df, width="stretch", hide_index=True)
+
+with st.expander("⚠️ Limpar formulário"):
+    st.warning("Esta ação limpa todos os valores preenchidos no formulário antes da submissão.")
+    st.checkbox("Confirmo que quero limpar todos os campos", key="reset_confirm")
+    st.button(
+        "Limpar todos os campos",
+        type="secondary",
+        disabled=not st.session_state.get("reset_confirm", False),
+        on_click=reset_form,
+    )
 
 submitted = st.button("✅ Confirmar e submeter registo", width="stretch", type="primary")
 
