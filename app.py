@@ -38,63 +38,83 @@ def eur(value: Decimal) -> str:
     return f"{money(value):,.2f} €".replace(",", " ")
 
 
-with st.form("financial_input_form", clear_on_submit=False):
-    st.subheader("📋 Dados do registo")
+def denomination_input(label: str, denomination: Decimal, key: str) -> int:
+    """Render a quantity input with its live EUR total immediately beside it."""
+    input_col, total_col = st.columns([2, 1])
+    with input_col:
+        quantity = st.number_input(label, min_value=0, step=1, value=0, format="%d", key=key)
+    with total_col:
+        st.metric("Total", eur(Decimal(quantity) * denomination))
+    return int(quantity)
 
-    selected_user = st.selectbox("Utilizador", USERS, index=0)
-    entry_date = st.date_input("Data", value=datetime.now().date())
 
-    st.markdown("### 🪙 Moedas")
-    coin_col1, coin_col2, coin_col3 = st.columns(3)
-    with coin_col1:
-        moeda_2eur = st.number_input("2 €", min_value=0, step=1, value=0, format="%d")
-        moeda_1eur = st.number_input("1 €", min_value=0, step=1, value=0, format="%d")
-    with coin_col2:
-        moeda_05eur = st.number_input("0,50 €", min_value=0, step=1, value=0, format="%d")
-        moeda_02eur = st.number_input("0,20 €", min_value=0, step=1, value=0, format="%d")
-    with coin_col3:
-        moeda_01eur = st.number_input("0,10 €", min_value=0, step=1, value=0, format="%d")
-        moeda_005eur = st.number_input("0,05 €", min_value=0, step=1, value=0, format="%d")
+st.subheader("📋 Dados do registo")
 
-    total_1eur_available = Decimal(moeda_1eur) * Decimal("1.00")
-    total_05eur_available = Decimal(moeda_05eur) * Decimal("0.50")
+selected_user = st.selectbox("Utilizador", USERS, index=0)
+entry_date = st.date_input("Data", value=datetime.now().date())
 
-    st.markdown("### 🔄 Troca-notas")
-    st.caption(
-        "Escolhe quanto do valor total em moedas de 1 € e 0,50 € vai para troca-notas. "
-        "O restante passa automaticamente para banco. Moedas de 0,10 € e 0,05 € vão sempre para banco."
+st.markdown("### 🪙 Moedas")
+coin_col1, coin_col2, coin_col3 = st.columns(3)
+with coin_col1:
+    moeda_2eur = denomination_input("2 €", Decimal("2.00"), "moeda_2eur")
+    moeda_1eur = denomination_input("1 €", Decimal("1.00"), "moeda_1eur")
+with coin_col2:
+    moeda_05eur = denomination_input("0,50 €", Decimal("0.50"), "moeda_05eur")
+    moeda_02eur = denomination_input("0,20 €", Decimal("0.20"), "moeda_02eur")
+with coin_col3:
+    moeda_01eur = denomination_input("0,10 €", Decimal("0.10"), "moeda_01eur")
+    moeda_005eur = denomination_input("0,05 €", Decimal("0.05"), "moeda_005eur")
+
+total_1eur_available = Decimal(moeda_1eur) * Decimal("1.00")
+total_05eur_available = Decimal(moeda_05eur) * Decimal("0.50")
+
+# If a user lowers the coin quantity after choosing a troca-notas amount, clamp the
+# current selection so Streamlit never keeps an impossible value in session state.
+st.session_state["troca_1eur_amount"] = min(
+    float(st.session_state.get("troca_1eur_amount", 0.0)), float(total_1eur_available)
+)
+st.session_state["troca_05eur_amount"] = min(
+    float(st.session_state.get("troca_05eur_amount", 0.0)), float(total_05eur_available)
+)
+
+st.markdown("### 🔄 Troca-notas")
+st.caption(
+    "Escolhe quanto do valor total em moedas de 1 € e 0,50 € vai para troca-notas. "
+    "O restante passa automaticamente para banco. Moedas de 0,10 € e 0,05 € vão sempre para banco."
+)
+troca_col1, troca_col2 = st.columns(2)
+with troca_col1:
+    st.caption(f"Disponível em moedas de 1 €: **{eur(total_1eur_available)}**")
+    troca_1eur_amount = st.number_input(
+        "Valor em moedas de 1 € para troca-notas (€)",
+        min_value=0.0,
+        max_value=float(total_1eur_available),
+        step=1.0,
+        format="%.2f",
+        key="troca_1eur_amount",
     )
-    troca_col1, troca_col2 = st.columns(2)
-    with troca_col1:
-        troca_1eur_amount = st.number_input(
-            "Valor em moedas de 1 € para troca-notas (€)",
-            min_value=0.0,
-            max_value=float(total_1eur_available),
-            step=1.0,
-            value=0.0,
-            format="%.2f",
-        )
-    with troca_col2:
-        troca_05eur_amount = st.number_input(
-            "Valor em moedas de 0,50 € para troca-notas (€)",
-            min_value=0.0,
-            max_value=float(total_05eur_available),
-            step=0.5,
-            value=0.0,
-            format="%.2f",
-        )
+with troca_col2:
+    st.caption(f"Disponível em moedas de 0,50 €: **{eur(total_05eur_available)}**")
+    troca_05eur_amount = st.number_input(
+        "Valor em moedas de 0,50 € para troca-notas (€)",
+        min_value=0.0,
+        max_value=float(total_05eur_available),
+        step=0.5,
+        format="%.2f",
+        key="troca_05eur_amount",
+    )
 
-    st.markdown("### 💵 Notas")
-    bill_col1, bill_col2, bill_col3 = st.columns(3)
-    with bill_col1:
-        nota_20eur = st.number_input("20 €", min_value=0, step=1, value=0, format="%d")
-    with bill_col2:
-        nota_10eur = st.number_input("10 €", min_value=0, step=1, value=0, format="%d")
-    with bill_col3:
-        nota_5eur = st.number_input("5 €", min_value=0, step=1, value=0, format="%d")
+st.markdown("### 💵 Notas")
+bill_col1, bill_col2, bill_col3 = st.columns(3)
+with bill_col1:
+    nota_20eur = denomination_input("20 €", Decimal("20.00"), "nota_20eur")
+with bill_col2:
+    nota_10eur = denomination_input("10 €", Decimal("10.00"), "nota_10eur")
+with bill_col3:
+    nota_5eur = denomination_input("5 €", Decimal("5.00"), "nota_5eur")
 
-    notes = st.text_area("Notas", placeholder="Notas opcionais sobre este registo...")
-    submitted = st.form_submit_button("✅ Submeter registo", width="stretch", type="primary")
+notes = st.text_area("Notas", placeholder="Notas opcionais sobre este registo...")
+submitted = st.button("✅ Submeter registo", width="stretch", type="primary")
 
 entry = EntryInput(
     user=selected_user,
