@@ -80,7 +80,7 @@ st.session_state["troca_05eur_amount"] = min(
 st.markdown("### 🔄 Troca-notas")
 st.caption(
     "Escolhe quanto do valor total em moedas de 1 € e 0,50 € vai para troca-notas. "
-    "O restante passa automaticamente para banco. Moedas de 0,10 € e 0,05 € vão sempre para banco."
+    "O restante passa automaticamente para banco. Moedas de 0,05 €, 0,10 €, 0,20 € e 2 € vão sempre para banco."
 )
 troca_col1, troca_col2 = st.columns(2)
 with troca_col1:
